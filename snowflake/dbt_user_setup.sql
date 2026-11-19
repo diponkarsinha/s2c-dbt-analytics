@@ -5,7 +5,7 @@
    a SERVICE user with key-pair auth and the least-privilege role S2C_TRANSFORMER
    (read RAW / AUDIT / STREAMING, build STAGING / INTERMEDIATE / SNAPSHOTS / MARTS).
 
-   For learning we reuse the key pair you already made (~/.ssh/snowflake/rsa_key.p8).
+   For this project we reuse the key pair you already made (~/.ssh/snowflake/rsa_key.p8).
    In a company each service user gets its own key.
    ============================================================================= */
 

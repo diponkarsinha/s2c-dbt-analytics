@@ -2,12 +2,12 @@
 
 **dbt Core project for Source-to-Contract (S2C) procurement analytics on Snowflake.**
 
-This repo turns the raw data loaded by **[s2c-snowflake-data-source](https://github.com/diponkarsinha/s2c-snowflake-data-source)** into clean, tested, documented tables and KPIs for a fictional *Sample pharmaceutical company*. It also holds the full learning material for the project: question banks, interview stories and a day-by-day guide.
+This repo turns the raw data loaded by **[s2c-snowflake-data-source](https://github.com/diponkarsinha/s2c-snowflake-data-source)** into clean, tested, documented tables and KPIs for a fictional *Sample pharmaceutical company*.
 
 | Repo | Role |
 |---|---|
 | [s2c-snowflake-data-source](https://github.com/diponkarsinha/s2c-snowflake-data-source) | Sources, GitHub landing zone, Python uploader, Snowflake RAW + audit layer + streaming |
-| **s2c-dbt-analytics** (this repo) | dbt: staging → intermediate → star schema → KPIs, tests, docs, CI, learning material |
+| **s2c-dbt-analytics** (this repo) | dbt: staging → intermediate → star schema → KPIs, tests, docs, CI |
 
 > All data is synthetic. No real company, supplier or person is represented.
 

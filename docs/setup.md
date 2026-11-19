@@ -48,7 +48,7 @@ dbt build
 `dbt build` runs everything in dependency order: the 2 seeds, the 48 models, the
 2 snapshots (right after the staging views they read) and all tests. Takes about 1-2 minutes.
 
-Useful smaller commands while learning:
+Useful smaller commands during development:
 
 ```bash
 dbt build --select staging          # only the staging folder (+ its tests)

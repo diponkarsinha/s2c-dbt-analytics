@@ -1,4 +1,4 @@
--- analyses/ are compiled by dbt but never run: a good place for practice queries.
+-- Ad-hoc analysis queries on the marts (compiled by dbt, not materialised).
 -- dbt compile, then open target/compiled/... and run it in Snowsight.
 
 -- 1. Top 3 suppliers by spend in each level-1 category (window function + QUALIFY)
