@@ -1,0 +1,17 @@
+version: 2
+seeds:
+  - name: country_regions
+    description: Country -> region lookup (small, stable reference data kept in Git).
+    columns:
+      - name: country_code
+        data_tests: [unique, not_null]
+  - name: kpi_targets
+    description: Business targets per KPI, used to show on-track / off-track.
+    columns:
+      - name: kpi_id
+        data_tests: [unique, not_null]
+      - name: better_when
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["higher", "lower"]

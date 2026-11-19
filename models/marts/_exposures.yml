@@ -1,0 +1,21 @@
+version: 2
+
+exposures:
+  - name: procurement_leadership_dashboard
+    label: Procurement leadership dashboard
+    type: dashboard
+    maturity: medium
+    description: >
+      Monthly S2C review: spend under contract, maverick spend, savings, cycle time,
+      supplier risk exposure and upcoming renewals. (Power BI / Tableau would read these tables.)
+    owner:
+      name: Procurement Analytics
+      email: procurement.analytics@samplepharma.example
+    depends_on:
+      - ref('kpi_scorecard')
+      - ref('kpi_spend_monthly')
+      - ref('kpi_supplier_risk_exposure')
+      - ref('kpi_sourcing_performance')
+      - ref('kpi_savings_validation')
+      - ref('kpi_contract_renewals')
+      - ref('kpi_invoice_price_variance')

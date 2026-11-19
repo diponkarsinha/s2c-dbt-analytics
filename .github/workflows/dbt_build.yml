@@ -1,0 +1,45 @@
+# Runs dbt in GitHub Actions.
+#   pull request -> dbt build (checks the change compiles, runs and passes tests)
+#   manual run   -> dbt build (deploy)
+name: dbt build
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: dbt-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dbt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DBT_PROFILES_DIR: ./ci
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_DBT_USER: ${{ secrets.SNOWFLAKE_DBT_USER }}
+      SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+      SNOWFLAKE_DATABASE: ${{ vars.SNOWFLAKE_DATABASE || 'S2C_DEV' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dbt
+        run: pip install -r requirements.txt
+      - name: dbt debug (connection)
+        run: dbt debug
+      - name: dbt build
+        run: dbt build --fail-fast
+      - name: Keep run artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-artifacts
+          path: |
+            target/run_results.json
+            target/manifest.json
+            logs/dbt.log

@@ -1,0 +1,78 @@
+version: 2
+
+models:
+  - name: stg_sap__po_items
+    description: >
+      Purchase order lines, typed and de-duplicated (latest version per PO line).
+      ERROR rows from the audit layer are excluded (see quarantine_sap__po_items).
+    columns:
+      - name: po_item_key
+        description: EBELN || '-' || EBELP. Business key.
+        data_tests: [unique, not_null]
+      - name: sap_supplier_id
+        data_tests: [not_null]
+      - name: po_date
+        data_tests: [not_null]
+      - name: quantity
+        data_tests: [not_null]
+      - name: net_value
+        data_tests: [not_null]
+      - name: currency
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["EUR", "USD", "GBP", "CHF", "CNY", "INR"]
+      - name: dq_status
+        description: OK / INFO / WARN from AUDIT.V_ROW_DQ_STATUS (ERROR rows never reach staging).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["OK", "INFO", "WARN"]
+
+  - name: quarantine_sap__po_items
+    description: PO rows the audit layer flagged as ERROR. Kept for investigation, never used downstream.
+
+  - name: stg_sap__invoices
+    description: Invoice lines from Parquet. Credit memos and reversals are negative.
+    columns:
+      - name: invoice_item_key
+        data_tests: [unique, not_null]
+      - name: posting_date
+        data_tests: [not_null]
+      - name: po_item_key
+        description: Link to the PO line. 5 planted orphan invoices fail this relationship.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_sap__po_items')
+                field: po_item_key
+              config:
+                severity: warn
+
+  - name: stg_sap__suppliers
+    description: Supplier master as in the latest full reload (history in snap_sap_suppliers).
+    columns:
+      - name: sap_supplier_id
+        data_tests: [unique, not_null]
+      - name: vat_number
+        description: Cross-system key used to match duplicates and Ariba suppliers.
+        data_tests: [not_null]
+
+  - name: stg_sap__cost_centers
+    columns:
+      - name: cost_center_id
+        data_tests: [unique, not_null]
+
+  - name: stg_sap__fx_rates
+    description: Monthly average rates, 1 EUR = units_per_eur x currency.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ["rate_month", "from_currency"]
+    columns:
+      - name: units_per_eur
+        data_tests:
+          - not_null
+          - accepted_range:
+              arguments:
+                min_value: 0

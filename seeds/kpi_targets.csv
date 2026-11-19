@@ -1,0 +1,9 @@
+kpi_id,kpi_name,target_value,unit,better_when
+KPI-01,Spend under contract %,80,percent,higher
+KPI-02,Maverick spend share %,10,percent,lower
+KPI-04,Source-to-award cycle time,60,days,lower
+KPI-05,Requests breaching SLA %,15,percent,lower
+KPI-06,Validated savings vs reported %,90,percent,higher
+KPI-09,Spend with high-risk suppliers %,5,percent,lower
+KPI-10,Single-source events %,15,percent,lower
+KPI-11,Invoice price variance %,1,percent,lower

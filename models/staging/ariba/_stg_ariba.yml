@@ -1,0 +1,73 @@
+version: 2
+
+models:
+  - name: stg_ariba__requests
+    description: Sourcing requests (intake). Paginated JSON flattened, latest version per request.
+    columns:
+      - name: request_id
+        data_tests: [unique, not_null]
+      - name: request_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["New", "In Review", "Sourcing", "Awarded", "Cancelled"]
+      - name: requested_by_email
+        description: Masked with GOVERNANCE.MP_EMAIL (PII).
+
+  - name: stg_ariba__sourcing_events
+    description: RFI / RFP / RFQ / auction events, latest version. Bids kept as JSON (bids_json).
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+      - name: category_id
+        description: 3 planted events use CAT-999 (unknown).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_ref__categories')
+                field: category_id
+              config:
+                severity: warn
+      - name: event_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["Draft", "Open", "Closed", "Completed", "Cancelled"]
+
+  - name: stg_ariba__bids
+    description: One row per bid per round (second-level FLATTEN, duplicates removed).
+    columns:
+      - name: bid_key
+        data_tests: [unique, not_null]
+      - name: bid_amount
+        data_tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+
+  - name: stg_ariba__contracts
+    description: Contracts, latest version per contract. Soft deletes flagged, booleans normalised.
+    columns:
+      - name: contract_id
+        data_tests: [unique, not_null]
+      - name: is_auto_renew
+        description: Normalised from true / "Y" / "N" / "true".
+        data_tests: [not_null]
+
+  - name: stg_ariba__contract_lines
+    columns:
+      - name: contract_line_key
+        data_tests: [unique, not_null]
+
+  - name: stg_ariba__contract_amendments
+    description: One row per amendment. Key = contract_id + amendment_id (IDs repeat on copied renewals).
+    columns:
+      - name: amendment_key
+        data_tests: [unique, not_null]
+      - name: amendment_id
+        data_tests: [not_null]
+
+  - name: stg_ariba__contract_approvals
+    columns:
+      - name: approval_id
+        data_tests: [unique, not_null]

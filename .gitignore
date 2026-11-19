@@ -1,0 +1,19 @@
+# dbt
+target/
+dbt_packages/
+logs/
+.user.yml
+
+# local login details - never commit
+/profiles.yml
+.env
+*.p8
+*.pem
+
+# python / editors
+.venv/
+venv/
+__pycache__/
+.DS_Store
+.idea/
+.vscode/

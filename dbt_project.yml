@@ -1,0 +1,61 @@
+# =============================================================================
+# s2c_analytics: dbt Core project on top of S2C_DEV (built by s2c-snowflake-data-source)
+#
+#   RAW (Bronze) -> STAGING (clean) -> INTERMEDIATE (combine) -> MARTS (Gold: star schema + KPIs)
+#                                   -> SNAPSHOTS (SCD2 history)
+# =============================================================================
+name: s2c_analytics
+version: "1.0.0"
+config-version: 2
+profile: s2c
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
+analysis-paths: ["analyses"]
+target-path: target
+clean-targets: ["target", "dbt_packages", "logs"]
+
+vars:
+  lookback_days: 3            # incremental models re-read the last N days of loads (late data)
+  enforce_gate: true          # stop run/build if AUDIT.V_PIPELINE_GATE = BLOCKED
+  sla_days: 45                # request -> award SLA
+  expiry_window_days: 90      # contracts expiring soon
+  high_risk_min_score: 7      # risk score 7-9 = High
+
+# Stop before touching Gold if the audit layer says the data is incomplete
+on-run-start:
+  - "{{ check_pipeline_gate() }}"
+
+models:
+  s2c_analytics:
+    +persist_docs: {relation: true}
+    staging:
+      +schema: STAGING
+      +materialized: view
+    intermediate:
+      +schema: INTERMEDIATE
+      +materialized: view
+    marts:
+      +schema: MARTS
+      +materialized: table
+      +persist_docs: {relation: true, columns: true}
+      +grants:
+        select: ["S2C_ANALYST"]
+      kpi:
+        +tags: ["kpi"]
+
+seeds:
+  s2c_analytics:
+    +schema: STAGING
+    +quote_columns: false
+
+snapshots:
+  s2c_analytics:
+    +schema: SNAPSHOTS
+
+data_tests:
+  s2c_analytics:
+    +store_failures: false

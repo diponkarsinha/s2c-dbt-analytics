@@ -1,0 +1,11 @@
+country_code,country_name,region
+DE,Germany,EMEA
+IE,Ireland,EMEA
+BE,Belgium,EMEA
+NL,Netherlands,EMEA
+FR,France,EMEA
+GB,United Kingdom,EMEA
+CH,Switzerland,EMEA
+US,United States,Americas
+IN,India,APAC
+CN,China,APAC

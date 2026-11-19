@@ -1,0 +1,15 @@
+# Profile used by GitHub Actions: every value comes from repository secrets.
+s2c:
+  target: ci
+  outputs:
+    ci:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_DBT_USER', 'S2C_DBT_SVC') }}"
+      role: S2C_TRANSFORMER
+      private_key: "{{ env_var('SNOWFLAKE_PRIVATE_KEY') }}"
+      warehouse: S2C_WH
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'S2C_DEV') }}"
+      schema: STAGING
+      threads: 4
+      query_tag: dbt_s2c_ci

@@ -1,0 +1,27 @@
+version: 2
+
+# SCD Type 2 history. dbt adds DBT_VALID_FROM / DBT_VALID_TO / DBT_SCD_ID / DBT_UPDATED_AT.
+# Current row = DBT_VALID_TO IS NULL.
+snapshots:
+  - name: snap_sap_suppliers
+    description: >
+      Every change to a supplier (name, address, bank account, blocked flag).
+      SAP sends the FULL master each time, so the check strategy compares columns.
+      Wave 8 creates new versions for 8 suppliers.
+    relation: ref('stg_sap__suppliers')
+    config:
+      unique_key: sap_supplier_id
+      strategy: check
+      check_cols: ["supplier_name", "city", "vat_number", "is_blocked", "iban", "bank_country"]
+      hard_deletes: ignore
+
+  - name: snap_contract_status
+    description: >
+      Contract status / value / term history. Ariba gives a change timestamp,
+      so the timestamp strategy is used. Wave 10 amends and terminates contracts.
+    relation: ref('stg_ariba__contracts')
+    config:
+      unique_key: contract_id
+      strategy: timestamp
+      updated_at: status_changed_at
+      hard_deletes: ignore

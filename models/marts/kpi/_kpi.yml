@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: kpi_spend_monthly
+    description: KPI-01/02/03. Spend, spend under contract and maverick spend per month x category x business unit.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ["month_start", "category_l1", "business_unit"]
+  - name: kpi_supplier_risk_exposure
+    description: KPI-09. Spend in the last 12 months per supplier with its risk band.
+    columns:
+      - name: supplier_id
+        data_tests: [unique, not_null]
+  - name: kpi_sourcing_performance
+    description: KPI-04/05/10. Cycle time, SLA breaches and single-source share per quarter x category.
+  - name: kpi_savings_validation
+    description: KPI-06/07. Reported vs recalculated vs finance-validated savings.
+  - name: kpi_contract_renewals
+    description: KPI-08. Active contracts ending in the next 90 days with dependent spend.
+    columns:
+      - name: contract_id
+        data_tests: [unique, not_null]
+  - name: kpi_invoice_price_variance
+    description: KPI-11. Amount billed above the PO price per supplier per month.
+  - name: kpi_scorecard
+    description: One row per KPI, actual (last 12 months) vs target, on track / off track.
+    columns:
+      - name: kpi_id
+        data_tests: [unique, not_null]

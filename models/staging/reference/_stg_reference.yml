@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: stg_ref__categories
+    description: 3-level category tree; leaf categories carry the SAP material group.
+    columns:
+      - name: category_id
+        data_tests: [unique, not_null]
+      - name: parent_category_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_ref__categories')
+                field: category_id
+
+  - name: stg_manual__savings
+    description: Savings tracker (Excel). TOTAL and blank rows removed, pasted duplicates removed.
+    columns:
+      - name: savings_id
+        data_tests: [unique, not_null]
+      - name: savings_date
+        data_tests: [not_null]
+
+unit_tests:
+  - name: test_savings_cleaning
+    description: >
+      The Excel tracker mixes real dates and typed dd/mm text, has a TOTAL row and a
+      pasted duplicate. Check that staging keeps 2 clean rows and parses 03/10/2026 as 3 October.
+    model: stg_manual__savings
+    given:
+      - input: source('raw', 'MANUAL_SAVINGS')
+        rows:
+          - {_file_row_number: 1, sheet_row: "_sheet_row", savings_id: "Savings ID", savings_date: "Savings Date", validated_by_finance: "Validated by Finance", _loaded_at: "2026-11-14 10:00:00"}
+          - {_file_row_number: 2, sheet_row: "4", savings_id: "SAV-0001", baseline_eur: "1000", negotiated_eur: "800", savings_eur: "200", savings_date: "03/10/2026", validated_by_finance: "yes", _loaded_at: "2026-11-14 10:00:00"}
+          - {_file_row_number: 3, sheet_row: "5", savings_id: "SAV-0002", baseline_eur: "500", negotiated_eur: "450", savings_eur: "50", savings_date: "2026-07-13", validated_by_finance: "No", _loaded_at: "2026-11-14 10:00:00"}
+          - {_file_row_number: 4, sheet_row: "6", savings_id: "SAV-0001", baseline_eur: "1000", negotiated_eur: "800", savings_eur: "200", savings_date: "03/10/2026", validated_by_finance: "yes", _loaded_at: "2026-11-14 10:00:00"}
+          - {_file_row_number: 5, sheet_row: "7", savings_id: "TOTAL", savings_eur: "=SUM(G4:G6)", _loaded_at: "2026-11-14 10:00:00"}
+    expect:
+      rows:
+        - {savings_id: "SAV-0001", savings_date: "2026-10-03", is_validated_by_finance: true, reported_savings_eur: 200}
+        - {savings_id: "SAV-0002", savings_date: "2026-07-13", is_validated_by_finance: false, reported_savings_eur: 50}

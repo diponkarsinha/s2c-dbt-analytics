@@ -1,0 +1,76 @@
+version: 2
+
+# Everything below is built and loaded by the companion repo s2c-snowflake-data-source.
+sources:
+  # --------------------------------------------------------------------------- RAW
+  - name: raw
+    database: "{{ target.database }}"
+    schema: RAW
+    description: >
+      Bronze layer. Files land exactly as delivered: CSV columns are all text and
+      row 1 of every CSV file is its header; JSON / XML / Parquet sit in one VARIANT
+      column called RAW. Every row carries file lineage (_FILE_NAME, _FILE_ROW_NUMBER,
+      _FILE_CONTENT_KEY, _LOADED_AT).
+    config:
+      loaded_at_field: _LOADED_AT
+      freshness:
+        warn_after: {count: 7, period: day}     # test data is replayed, so warn only
+    tables:
+      - name: SAP_PO_ITEMS
+        description: SAP EKKO/EKPO purchase order lines (semicolon CSV, decimal comma).
+      - name: SAP_INVOICES
+        description: SAP RBKP/RSEG invoice lines (Parquet -> VARIANT).
+      - name: SAP_SUPPLIERS
+        description: SAP vendor master, IDoc CREMAS05 XML, one row per IDOC. Full reload.
+      - name: SAP_COST_CENTERS
+        description: SAP CSKS cost centres (CSV).
+      - name: SAP_FX_RATES
+        description: Monthly average FX rates (XML), one row per month.
+      - name: ARIBA_SOURCING_REQUESTS
+        description: Sourcing requests, paginated API JSON, one row per page.
+      - name: ARIBA_SOURCING_EVENTS
+        description: Sourcing events with nested bids and award, one row per export.
+      - name: ARIBA_CONTRACTS
+        description: Contracts with nested terms, line items and amendments, one row per export.
+      - name: ARIBA_CONTRACT_APPROVALS
+        description: Contract approval steps (CSV).
+      - name: RISK_ESG
+        description: Weekly risk + ESG file, one row per file.
+      - name: RISK_EVENTS
+        description: Risk score events (NDJSON), loaded by Snowpipe.
+        config:
+          freshness: null
+      - name: REF_CATEGORIES
+        description: Category taxonomy (CSV).
+      - name: MANUAL_SAVINGS
+        description: Savings tracker kept in Excel, converted to CSV on upload.
+
+  # --------------------------------------------------------------------------- AUDIT
+  - name: audit
+    database: "{{ target.database }}"
+    schema: AUDIT
+    description: Pre-dbt audit layer (file registry, DQ results, pipeline gate).
+    tables:
+      - name: V_ROW_DQ_STATUS
+        description: Worst open DQ severity per RAW row. Join on file name + row number.
+      - name: V_PIPELINE_GATE
+        description: PASS / BLOCKED. Checked by the on-run-start hook.
+      - name: FILE_REGISTRY
+        description: Every file pushed from GitHub (MD5, commit, rows).
+      - name: DQ_RESULTS_LOG
+        description: One row per DQ rule per run.
+
+  # --------------------------------------------------------------------------- STREAMING
+  - name: streaming
+    database: "{{ target.database }}"
+    schema: STREAMING
+    description: Speed layer for supplier risk (Snowpipe -> stream -> task).
+    tables:
+      - name: RISK_CURRENT
+        description: Latest risk score per supplier VAT (event-time ordered).
+      - name: RISK_EVENT_LOG
+        description: Every valid, de-duplicated risk event.
+      - name: RISK_ALERTS
+        description: Near-real-time alerts (HIGH_RISK, SCORE_JUMP, SANCTIONS_HIT).
+      - name: RISK_DEAD_LETTER
+        description: Events the speed layer rejected.

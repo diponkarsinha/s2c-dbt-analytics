@@ -1,0 +1,159 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: Calendar 2023-2028.
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
+
+  - name: dim_supplier
+    description: >
+      One row per real supplier (golden record by VAT). Risk = live score from the
+      speed layer, else the latest weekly assessment; no score at all = "Not assessed".
+    columns:
+      - name: supplier_id
+        description: Golden supplier ID (oldest SAP ID for the VAT number).
+        data_tests: [unique, not_null]
+      - name: vat_number
+        data_tests: [unique, not_null]
+      - name: risk_band
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["Low", "Medium", "High", "Not assessed"]
+      - name: is_review_overdue
+        description: Risk review past its due date (10 planted).
+
+  - name: dim_category
+    description: Category tree with level-1 / level-2 parents. Model contract enforced.
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: category_id
+        data_type: varchar
+        constraints:
+          - type: not_null
+        data_tests: [unique]
+      - name: category_name
+        data_type: varchar
+      - name: category_level
+        data_type: number(10, 0)
+      - name: l1_category_name
+        data_type: varchar
+      - name: l2_category_name
+        data_type: varchar
+      - name: category_path
+        data_type: varchar
+      - name: material_group
+        data_type: varchar
+      - name: is_active
+        data_type: boolean
+
+  - name: dim_cost_center
+    columns:
+      - name: cost_center_id
+        data_tests: [unique, not_null]
+
+  - name: dim_contract
+    description: Current version of each contract, with supplier match and renewal dates.
+    data_tests:
+      - expression_is_true:
+          arguments:
+            expression: "is_deleted or end_date >= start_date"
+          config:
+            severity: warn
+    columns:
+      - name: contract_id
+        data_tests: [unique, not_null]
+      - name: supplier_id
+        description: NULL when the Ariba supplier cannot be matched to SAP (4 planted).
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+
+  - name: dim_contract_history
+    description: SCD2 contract history from snap_contract_status.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ["contract_id", "valid_from"]
+
+  - name: dim_supplier_history
+    description: SCD2 supplier history from snap_sap_suppliers.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ["sap_supplier_id", "valid_from"]
+
+  - name: dim_employee
+    description: Approvers with org level and reporting line (recursive CTE).
+    columns:
+      - name: employee_id
+        data_tests: [unique, not_null]
+
+  - name: fct_purchase_order_line
+    description: One row per PO line (incremental merge). Compliance flags kept, never filtered.
+    columns:
+      - name: po_item_key
+        data_tests: [unique, not_null]
+      - name: supplier_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_supplier')
+                field: supplier_id
+      - name: category_id
+        description: NULL for the 3 planted lines with an unknown material group.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+
+  - name: fct_invoice_line
+    description: One row per invoice line (incremental merge on load time, catches late data).
+    columns:
+      - name: invoice_item_key
+        data_tests: [unique, not_null]
+      - name: amount_eur
+        description: NULL when the FX rate is missing (INR 2026-08 planted).
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+
+  - name: fct_spend
+    description: Spend fact (invoice-line grain) with contract, risk and compliance flags.
+    columns:
+      - name: invoice_item_key
+        data_tests: [unique, not_null]
+
+  - name: fct_sourcing_event
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+      - name: is_missing_award_date
+        description: Completed events without an award date (6 planted).
+
+  - name: fct_bid
+    columns:
+      - name: bid_key
+        data_tests: [unique, not_null]
+
+  - name: fct_savings
+    description: Reported savings vs savings proven by sourcing data.
+    columns:
+      - name: savings_id
+        data_tests: [unique, not_null]
+
+  - name: fct_request_pipeline
+    columns:
+      - name: request_id
+        data_tests: [unique, not_null]
+      - name: pipeline_stage
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["0 Cancelled", "1 Intake", "2 Sourcing", "3 Awarded", "4 Contracted"]

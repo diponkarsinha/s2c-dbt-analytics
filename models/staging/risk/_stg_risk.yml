@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: stg_risk__assessments
+    description: Weekly risk + ESG assessments. Out-of-range scores set to NULL.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ["vat_number", "generated_at"]
+    columns:
+      - name: financial_risk_score
+        data_tests:
+          - accepted_range:
+              arguments:
+                min_value: 1
+                max_value: 9
+      - name: is_review_overdue
+        description: 10 planted suppliers have an overdue review.
+
+  - name: stg_risk__current
+    description: Live risk score per supplier from the speed layer.
+    columns:
+      - name: vat_number
+        data_tests: [unique, not_null]
+
+  - name: stg_risk__alerts
+    description: Alerts raised by the speed layer.
+    columns:
+      - name: alert_id
+        data_tests: [unique, not_null]

@@ -1,0 +1,18 @@
+# Copy this file to ~/.dbt/profiles.yml  (it is NOT committed: it describes how YOU log in)
+#   mkdir -p ~/.dbt && cp profiles.yml.example ~/.dbt/profiles.yml
+# Then check with: dbt debug
+s2c:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: XXXXXXX-XXXXXXX                     # your Snowflake account identifier, format ORG-ACCOUNT (Snowsight: your name, bottom left → Account → Copy account identifier)
+      user: S2C_DBT_SVC                            # service user created by snowflake/dbt_user_setup.sql
+      role: S2C_TRANSFORMER
+      private_key_path: /Users/YOUR_MAC_USER/.ssh/snowflake/rsa_key.p8   # absolute path, no ~
+      warehouse: S2C_WH
+      database: S2C_DEV
+      schema: STAGING                              # default schema; models choose their own (+schema)
+      threads: 4
+      client_session_keep_alive: false
+      query_tag: dbt_s2c
